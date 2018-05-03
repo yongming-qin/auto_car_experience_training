@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # snakeoil.py
 # Chris X Edwards <snakeoil@xed.ch>
 # Snake Oil is a Python library for interfacing with a TORCS
@@ -53,6 +53,8 @@
 # Try `snakeoil.py --help` to get started.
 
 # for Python3-based torcs python robot client
+from __future__ import division
+from __future__ import absolute_import
 import socket
 import sys
 import getopt
@@ -115,7 +117,7 @@ def bargraph(x,mn,mx,w,c='X'):
     pnc= int(posnonpu/upw)*'_'
     return '[%s]' % (nnc+npc+ppc+pnc)
 
-class Client():
+class Client(object):
     def __init__(self,H=None,p=None,i=None,e=None,t=None,s=None,d=None,vision=False):
         # If you don't like the option defaults,  change them here.
         self.vision = vision
@@ -144,8 +146,8 @@ class Client():
         # == Set Up UDP Socket ==
         try:
             self.so= socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        except socket.error as emsg:
-            print('Error: Could not create socket...')
+        except socket.error, emsg:
+            print 'Error: Could not create socket...'
             sys.exit(-1)
         # == Initialize Connection To Server ==
         self.so.settimeout(1)
@@ -161,17 +163,17 @@ class Client():
 
             try:
                 self.so.sendto(initmsg.encode(), (self.host, self.port))
-            except socket.error as emsg:
+            except socket.error, emsg:
                 sys.exit(-1)
-            sockdata= str()
+            sockdata= unicode()
             try:
                 sockdata,addr= self.so.recvfrom(data_size)
                 sockdata = sockdata.decode('utf-8')
-            except socket.error as emsg:
-                print("Waiting for server on %d............" % self.port)
-                print("Count Down : " + str(n_fail))
+            except socket.error, emsg:
+                print "Waiting for server on %d............" % self.port
+                print "Count Down : " + unicode(n_fail)
                 if n_fail < 0:
-                    print("relaunch torcs")
+                    print "relaunch torcs"
                     os.system('pkill torcs')
                     time.sleep(1.0)
                     if self.vision is False:
@@ -186,7 +188,7 @@ class Client():
 
             identify = '***identified***'
             if identify in sockdata:
-                print("Client connected on %d.............." % self.port)
+                print "Client connected on %d.............." % self.port
                 break
 
     def parse_the_command_line(self):
@@ -195,13 +197,13 @@ class Client():
                        ['host=','port=','id=','steps=',
                         'episodes=','track=','stage=',
                         'debug','help','version'])
-        except getopt.error as why:
-            print('getopt error: %s\n%s' % (why, usage))
+        except getopt.error, why:
+            print 'getopt error: %s\n%s' % (why, usage)
             sys.exit(-1)
         try:
             for opt in opts:
                 if opt[0] == '-h' or opt[0] == '--help':
-                    print(usage)
+                    print usage
                     sys.exit(0)
                 if opt[0] == '-d' or opt[0] == '--debug':
                     self.debug= True
@@ -220,41 +222,41 @@ class Client():
                 if opt[0] == '-m' or opt[0] == '--steps':
                     self.maxSteps= int(opt[1])
                 if opt[0] == '-v' or opt[0] == '--version':
-                    print('%s %s' % (sys.argv[0], version))
+                    print '%s %s' % (sys.argv[0], version)
                     sys.exit(0)
-        except ValueError as why:
-            print('Bad parameter \'%s\' for option %s: %s\n%s' % (
-                                       opt[1], opt[0], why, usage))
+        except ValueError, why:
+            print 'Bad parameter \'%s\' for option %s: %s\n%s' % (
+                                       opt[1], opt[0], why, usage)
             sys.exit(-1)
         if len(args) > 0:
-            print('Superflous input? %s\n%s' % (', '.join(args), usage))
+            print 'Superflous input? %s\n%s' % (', '.join(args), usage)
             sys.exit(-1)
 
     def get_servers_input(self):
         '''Server's input is stored in a ServerState object'''
         if not self.so: return
-        sockdata= str()
+        sockdata= unicode()
 
         while True:
             try:
                 # Receive server data
                 sockdata,addr= self.so.recvfrom(data_size)
                 sockdata = sockdata.decode('utf-8')
-            except socket.error as emsg:
-                print('.', end=' ')
+            except socket.error, emsg:
+                print '.',
                 #print "Waiting for data on %d.............." % self.port
             if '***identified***' in sockdata:
-                print("Client connected on %d.............." % self.port)
+                print "Client connected on %d.............." % self.port
                 continue
             elif '***shutdown***' in sockdata:
-                print((("Server has stopped the race on %d. "+
+                print (("Server has stopped the race on %d. "+
                         "You were in %d place.") %
-                        (self.port,self.S.d['racePos'])))
+                        (self.port,self.S.d['racePos']))
                 self.shutdown()
                 return
             elif '***restart***' in sockdata:
                 # What do I do here?
-                print("Server has restarted the race on %d." % self.port)
+                print "Server has restarted the race on %d." % self.port
                 # I haven't actually caught the server doing this.
                 self.shutdown()
                 return
@@ -264,7 +266,7 @@ class Client():
                 self.S.parse_server_str(sockdata)
                 if self.debug:
                     sys.stderr.write("\x1b[2J\x1b[H") # Clear for steady output.
-                    print(self.S)
+                    print self.S
                 break # Can now return from this function.
 
     def respond_to_server(self):
@@ -272,25 +274,25 @@ class Client():
         try:
             message = repr(self.R)
             self.so.sendto(message.encode(), (self.host, self.port))
-        except socket.error as emsg:
-            print("Error sending to server: %s Message %s" % (emsg[1],str(emsg[0])))
+        except socket.error, emsg:
+            print "Error sending to server: %s Message %s" % (emsg[1],unicode(emsg[0]))
             sys.exit(-1)
-        if self.debug: print(self.R.fancyout())
+        if self.debug: print self.R.fancyout()
         # Or use this for plain output:
         #if self.debug: print self.R
 
     def shutdown(self):
         if not self.so: return
-        print(("Race terminated or %d steps elapsed. Shutting down %d."
-               % (self.maxSteps,self.port)))
+        print ("Race terminated or %d steps elapsed. Shutting down %d."
+               % (self.maxSteps,self.port))
         self.so.close()
         self.so = None
         #sys.exit() # No need for this really.
 
-class ServerState():
+class ServerState(object):
     '''What the server is reporting right now.'''
     def __init__(self):
-        self.servstr= str()
+        self.servstr= unicode()
         self.d= dict()
 
     def parse_server_str(self, server_string):
@@ -305,18 +307,18 @@ class ServerState():
         # Comment the next line for raw output:
         return self.fancyout()
         # -------------------------------------
-        out= str()
+        out= unicode()
         for k in sorted(self.d):
-            strout= str(self.d[k])
+            strout= unicode(self.d[k])
             if type(self.d[k]) is list:
-                strlist= [str(i) for i in self.d[k]]
+                strlist= [unicode(i) for i in self.d[k]]
                 strout= ', '.join(strlist)
             out+= "%s: %s\n" % (k,strout)
         return out
 
     def fancyout(self):
         '''Specialty output for useful ServerState monitoring.'''
-        out= str()
+        out= unicode()
         sensors= [ # Select the ones you want in the order you want them.
         #'curLapTime',
         #'lastLapTime',
@@ -347,7 +349,7 @@ class ServerState():
         for k in sensors:
             if type(self.d.get(k)) is list: # Handle list type data.
                 if k == 'track': # Nice display for track sensors.
-                    strout= str()
+                    strout= unicode()
                  #  for tsensor in self.d['track']:
                  #      if   tsensor >180: oc= '|'
                  #      elif tsensor > 80: oc= ';'
@@ -362,18 +364,18 @@ class ServerState():
                     raw_tsens= ['%.1f'%x for x in self.d['track']]
                     strout+= ' '.join(raw_tsens[:9])+'_'+raw_tsens[9]+'_'+' '.join(raw_tsens[10:])
                 elif k == 'opponents': # Nice display for opponent sensors.
-                    strout= str()
+                    strout= unicode()
                     for osensor in self.d['opponents']:
                         if   osensor >190: oc= '_'
                         elif osensor > 90: oc= '.'
-                        elif osensor > 39: oc= chr(int(osensor/2)+97-19)
-                        elif osensor > 13: oc= chr(int(osensor)+65-13)
-                        elif osensor >  3: oc= chr(int(osensor)+48-3)
+                        elif osensor > 39: oc= unichr(int(osensor/2)+97-19)
+                        elif osensor > 13: oc= unichr(int(osensor)+65-13)
+                        elif osensor >  3: oc= unichr(int(osensor)+48-3)
                         else: oc= '?'
                         strout+= oc
                     strout= ' -> '+strout[:18] + ' ' + strout[18:]+' <-'
                 else:
-                    strlist= [str(i) for i in self.d[k]]
+                    strlist= [unicode(i) for i in self.d[k]]
                     strout= ', '.join(strlist)
             else: # Not a list type of value.
                 if k == 'gear': # This is redundant now since it's part of RPM.
@@ -437,17 +439,17 @@ class ServerState():
                               (self.d['wheelSpinVel'][0]+self.d['wheelSpinVel'][1]))
                     strout= bargraph(slip,-5,150,50,'@')
                 else:
-                    strout= str(self.d[k])
+                    strout= unicode(self.d[k])
             out+= "%s: %s\n" % (k,strout)
         return out
 
-class DriverAction():
+class DriverAction(object):
     '''What the driver is intending to do (i.e. send to the server).
     Composes something like this for the server:
     (accel 1)(brake 0)(gear 1)(steer 0)(clutch 0)(focus 0)(meta 0) or
     (accel 1)(brake 0)(gear 1)(steer 0)(clutch 0)(focus -90 -45 0 45 90)(meta 0)'''
     def __init__(self):
-       self.actionstr= str()
+       self.actionstr= unicode()
        # "d" is for data dictionary.
        self.d= { 'accel':0.2,
                    'brake':0,
@@ -479,21 +481,21 @@ class DriverAction():
 
     def __repr__(self):
         self.clip_to_limits()
-        out= str()
+        out= unicode()
         for k in self.d:
             out+= '('+k+' '
             v= self.d[k]
             if not type(v) is list:
                 out+= '%.3f' % v
             else:
-                out+= ' '.join([str(x) for x in v])
+                out+= ' '.join([unicode(x) for x in v])
             out+= ')'
         return out
         return out+'\n'
 
     def fancyout(self):
         '''Specialty output for useful monitoring of bot's effectors.'''
-        out= str()
+        out= unicode()
         od= self.d.copy()
         od.pop('gear','') # Not interesting.
         od.pop('meta','') # Not interesting.
@@ -505,7 +507,7 @@ class DriverAction():
             elif k == 'steer': # Reverse the graph to make sense.
                 strout= '%6.3f %s' % (od[k], bargraph(od[k]*-1,-1,1,50,'S'))
             else:
-                strout= str(od[k])
+                strout= unicode(od[k])
             out+= "%s: %s\n" % (k,strout)
         return out
 
@@ -514,11 +516,11 @@ def destringify(s):
     '''makes a string into a value or a list of strings into a list of
     values (if possible)'''
     if not s: return s
-    if type(s) is str:
+    if type(s) is unicode:
         try:
             return float(s)
         except ValueError:
-            print("Could not find a value in %s" % s)
+            print "Could not find a value in %s" % s
             return s
     elif type(s) is list:
         if len(s) < 2:
@@ -530,7 +532,7 @@ def drive_example(c):
     '''This is only an example. It will get around the track but the
     correct thing to do is write your own `drive()` function.'''
     S,R= c.S.d,c.R.d
-    target_speed=100
+    target_speed=1000
 
     # Steer To Corner
     R['steer']= S['angle']*10 / PI
@@ -567,7 +569,7 @@ def drive_example(c):
 # ================ MAIN ================
 if __name__ == "__main__":
     C= Client(p=3101)
-    for step in range(C.maxSteps,0,-1):
+    for step in xrange(C.maxSteps,0,-1):
         C.get_servers_input()
         drive_example(C)
         C.respond_to_server()
