@@ -60,6 +60,7 @@ import sys
 import getopt
 import os
 import time
+
 PI= 3.14159265359
 
 data_size = 2**17
@@ -551,7 +552,9 @@ def drive_example(c):
     if ((S['wheelSpinVel'][2]+S['wheelSpinVel'][3]) -
        (S['wheelSpinVel'][0]+S['wheelSpinVel'][1]) > 5):
        R['accel']-= .2
-
+    print("------------------------------------------------")
+    print("angle: ", S['angle'], "speedX: ", S['speedX'], "trackPos: ", S['trackPos'])
+    print("steer: ", R['steer'], "accel: ", R['accel'], "brake: ", R['brake'])
     # Automatic Transmission
     R['gear']=1
     if S['speedX']>50:

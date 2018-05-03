@@ -16,6 +16,9 @@ from CriticNetwork import CriticNetwork
 from OU import OU
 import timeit
 
+import signal
+import sys
+
 OU = OU()       #Ornstein-Uhlenbeck Process
 
 def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
@@ -158,5 +161,15 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
     env.end()  # This is for shutting down TORCS
     print("Finish.")
 
+def signal_handler(signal, frame):
+    print('You pressed Ctrl+C!')
+    # Generate a Torcs environment
+    env = TorcsEnv(vision=False, throttle=True, gear_change=False)
+    env.end()
+    sys.exit(0)
+
 if __name__ == "__main__":
+    # if ctrl c is pressed, close env too
+    signal.signal(signal.SIGINT, signal_handler)
+
     playGame()
