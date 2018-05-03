@@ -26,8 +26,8 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
     BATCH_SIZE = 32
     GAMMA = 0.99
     TAU = 0.001     #Target Network HyperParameters
-    LRA = 0.0001    #Learning rate for Actor
-    LRC = 0.001     #Lerning rate for Critic
+    LRA = 0.000001 #0.0001    #Learning rate for Actor
+    LRC = 0.000001 #0.001     #Lerning rate for Critic
 
     action_dim = 3  #Steering/Acceleration/Brake
     state_dim = 29  #of sensors input
@@ -62,10 +62,10 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
     #Now load the weight
     print("Now we load the weight")
     try:
-        actor.model.load_weights("actormodel.h5")
-        critic.model.load_weights("criticmodel.h5")
-        actor.target_model.load_weights("actormodel.h5")
-        critic.target_model.load_weights("criticmodel.h5")
+        actor.model.load_weights("pre_actormodel.h5")
+        critic.model.load_weights("pre_criticmodel.h5")
+        actor.target_model.load_weights("pre_actormodel.h5")
+        critic.target_model.load_weights("pre_criticmodel.h5")
         print("Weight load successfully")
     except:
         print("Cannot find the weight")
@@ -86,13 +86,17 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
         for j in range(max_steps):
             loss = 0 
             epsilon -= 1.0 / EXPLORE
-            a_t = np.zeros([1,action_dim])
+            a_t = np.zeros([1,action_dim]) # steer, accel, brake
             noise_t = np.zeros([1,action_dim])
             
             a_t_original = actor.model.predict(s_t.reshape(1, s_t.shape[0]))
-            noise_t[0][0] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][0],  0.0 , 0.60, 0.30)
-            noise_t[0][1] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][1],  0.5 , 1.00, 0.10)
-            noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2], -0.1 , 1.00, 0.05)
+            #noise_t[0][0] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][0],  0.0 , 0.60, 0.30)
+            #noise_t[0][1] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][1],  0.5 , 1.00, 0.10)
+            #noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2], -0.1 , 1.00, 0.05)
+
+            noise_t[0][0] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][0],  0.0 , 0, 0) # steer
+            noise_t[0][1] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][1],  1 , 0.5, 0.10) # accel
+            noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2], 0 , 0, 0.05) # brake
 
             #The following code do the stochastic brake
             #if random.random() <= 0.1:

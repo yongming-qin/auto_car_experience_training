@@ -149,13 +149,13 @@ class TorcsEnv:
            reward = -200
            episode_terminate = True
            
-        """
+        
         if self.terminal_judge_start < self.time_step: # Episode terminates if the progress of agent is small
            if progress < self.termination_limit_progress:
                print("No progress")
                episode_terminate = True
                client.R.d['meta'] = True
-        """
+        
 
         if np.cos(obs['angle']) < 0: # Episode is terminated if the agent runs backward
             episode_terminate = True

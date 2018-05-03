@@ -44,7 +44,7 @@ class DriverExample(object):
     def action(self, s_t):
         '''This is only an example. It will get around the track but the
         correct thing to do is write your own `drive()` function.'''
-        target_speed=1000
+        target_speed=100
         # S: angle, track (19), trackPos, speedX, speedY, speedZ, wheelSpinVel/100.0 (4), rpm
         S = {}
             # value are processed in gym_torcs.py/make_observation while these are not processed
@@ -204,18 +204,19 @@ def preTrain(): # train the NN of actor and ciritc using existing rules
             print("loss_actor", loss_actor, "loss_critic", loss_critic)
         
             step += 1
+
+            if np.mod(step, 100) == 0:
+                print("Now we save model")
+                actor.model.save_weights("pre_actormodel.h5", overwrite=True)
+                with open("pre_actormodel.json", "w") as outfile:
+                    json.dump(actor.model.to_json(), outfile)
+
+                critic.model.save_weights("pre_criticmodel.h5", overwrite=True)
+                with open("pre_criticmodel.json", "w") as outfile:
+                    json.dump(critic.model.to_json(), outfile)
+            
             if done:
                 break
-
-        if np.mod(i, 3) == 0:
-            print("Now we save model")
-            actor.model.save_weights("pre_actormodel.h5", overwrite=True)
-            with open("pre_actormodel.json", "w") as outfile:
-                json.dump(actor.model.to_json(), outfile)
-
-            critic.model.save_weights("pre_criticmodel.h5", overwrite=True)
-            with open("pre_criticmodel.json", "w") as outfile:
-                json.dump(critic.model.to_json(), outfile)
 
         print("TOTAL REWARD @ " + str(i) +"-th Episode  : Reward " + str(total_reward))
         print("Total Step: " + str(step))
