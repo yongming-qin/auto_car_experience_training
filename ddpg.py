@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 
 OU = OU()       #Ornstein-Uhlenbeck Process
 
-def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
+def playGame(train_indicator=0):    #1 means Train, 0 means simply Run
     BUFFER_SIZE = 100000
     BATCH_SIZE = 32
     GAMMA = 0.99
@@ -56,14 +56,14 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
 
     # Generate a Torcs environment
     env = TorcsEnv(vision=vision, throttle=True,gear_change=False)
-
+    folder = "../pre_"
     #Now load the weight
     print("Now we load the weight")
     try:
-        actor.model.load_weights("actormodel.h5")
-        critic.model.load_weights("criticmodel.h5")
-        actor.target_model.load_weights("actormodel.h5")
-        critic.target_model.load_weights("criticmodel.h5")
+        actor.model.load_weights(folder+"actormodel.h5")
+        critic.model.load_weights(folder+"criticmodel.h5")
+        actor.target_model.load_weights(folder+"actormodel.h5")
+        critic.target_model.load_weights(folder+"criticmodel.h5")
         print("Weight load successfully")
     except:
         print("Cannot find the weight")
@@ -92,18 +92,21 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
             noise_t = np.zeros([1,action_dim])
             
             a_t_original = actor.model.predict(s_t.reshape(1, s_t.shape[0]))
-            noise_t[0][0] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][0],  0.6, 0, 0.30)
+            noise_t[0][0] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][0],  0.6, 0, 0.10)
             noise_t[0][1] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][1],  1, 0.6, 0.10)
-            noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2], 1.0, -0.1, 0.05)
+            # noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2], 1.0, -0.1, 0.05)
 
             #The following code do the stochastic brake
-            if random.random() <= 0.1:
-                print("********Now we apply the brake***********")
-                noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2],  0.2 , 1.00, 0.10)
+            if False:
+                if random.random() <= 0.1:
+                    print("********Now we apply the brake***********")
+                    noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2],  0.2 , 1.00, 0.10)
 
             a_t[0][0] = a_t_original[0][0] + noise_t[0][0]
             a_t[0][1] = a_t_original[0][1] + noise_t[0][1]
             a_t[0][2] = a_t_original[0][2] + noise_t[0][2]
+
+            print("a_t: ", a_t[0])
 
             ob, r_t, done, info = env.step(a_t[0])
 

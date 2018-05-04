@@ -23,11 +23,11 @@ OU = OU()       #Ornstein-Uhlenbeck Process
 
 def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
     BUFFER_SIZE = 100000
-    BATCH_SIZE = 32
+    BATCH_SIZE = 10
     GAMMA = 0.99
-    TAU = 0.001     #Target Network HyperParameters
+    TAU = 0.001 #Target Network HyperParameters
     LRA = 0.000001 #0.0001    #Learning rate for Actor
-    LRC = 0.000001 #0.001     #Lerning rate for Critic
+    LRC = 0.001 #0.001     #Lerning rate for Critic
 
     action_dim = 3  #Steering/Acceleration/Brake
     state_dim = 29  #of sensors input
@@ -36,7 +36,7 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
 
     vision = False
 
-    EXPLORE = 100000.
+    EXPLORE = 10000.
     episode_count = 2000
     max_steps = 100000
     reward = 0
@@ -61,11 +61,12 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
 
     #Now load the weight
     print("Now we load the weight")
+    folder = "../pre_"
     try:
-        actor.model.load_weights("pre_actormodel.h5")
-        critic.model.load_weights("pre_criticmodel.h5")
-        actor.target_model.load_weights("pre_actormodel.h5")
-        critic.target_model.load_weights("pre_criticmodel.h5")
+        actor.model.load_weights(folder+"actormodel.h5")
+        critic.model.load_weights(folder+"criticmodel.h5")
+        actor.target_model.load_weights(folder+"actormodel.h5")
+        critic.target_model.load_weights(folder+"criticmodel.h5")
         print("Weight load successfully")
     except:
         print("Cannot find the weight")
@@ -94,16 +95,19 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
             #noise_t[0][1] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][1],  0.5 , 1.00, 0.10)
             #noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2], -0.1 , 1.00, 0.05)
 
-            noise_t[0][0] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][0],  0.0 , 0, 0) # steer
-            noise_t[0][1] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][1],  1 , 0.5, 0.10) # accel
-            noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2], 0 , 0, 0.05) # brake
+            noise_t[0][0] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][0],  0 , 0, 0.01) # steer
+            print("noise_t[0][0]: ", noise_t[0][0])
+            noise_t[0][1] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][1],  1 , 0.6, 0.10) # accel
+            #noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2], 1.0, -0.1, 0.05) # brake
 
             #The following code do the stochastic brake
-            #if random.random() <= 0.1:
-            #    print("********Now we apply the brake***********")
-            #    noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2],  0.2 , 1.00, 0.10)
+            if False:
+                if random.random() <= 0.1:
+                    print("**********************Now we apply the brake*************************")
+                    noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2],  1 , 0.2, 0.10)
 
             a_t[0][0] = a_t_original[0][0] + noise_t[0][0]
+            print("a_t_original[0][0]: ", a_t_original[0][0])
             a_t[0][1] = a_t_original[0][1] + noise_t[0][1]
             a_t[0][2] = a_t_original[0][2] + noise_t[0][2]
 
@@ -135,8 +139,8 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
                 a_for_grad = actor.model.predict(states)
                 grads = critic.gradients(states, a_for_grad)
                 actor.train(states, grads)
-                actor.target_train()
-                critic.target_train()
+                #actor.target_train()
+                #critic.target_train()
 
             total_reward += r_t
             s_t = s_t1
@@ -150,12 +154,12 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
         if np.mod(i, 3) == 0:
             if (train_indicator):
                 print("Now we save model")
-                actor.model.save_weights("actormodel.h5", overwrite=True)
-                with open("actormodel.json", "w") as outfile:
+                actor.model.save_weights("post_actormodel.h5", overwrite=True)
+                with open("post_actormodel.json", "w") as outfile:
                     json.dump(actor.model.to_json(), outfile)
 
-                critic.model.save_weights("criticmodel.h5", overwrite=True)
-                with open("criticmodel.json", "w") as outfile:
+                critic.model.save_weights("post_criticmodel.h5", overwrite=True)
+                with open("post_criticmodel.json", "w") as outfile:
                     json.dump(critic.model.to_json(), outfile)
 
         print("TOTAL REWARD @ " + str(i) +"-th Episode  : Reward " + str(total_reward))
