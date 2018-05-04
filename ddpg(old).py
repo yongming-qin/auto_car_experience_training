@@ -9,17 +9,18 @@ from keras.optimizers import Adam
 import tensorflow as tf
 from keras.engine.training import collect_trainable_weights
 import json
+import matplotlib.pyplot as plt
 
 from ReplayBuffer import ReplayBuffer
 from ActorNetwork import ActorNetwork
 from CriticNetwork import CriticNetwork
 from OU import OU
 import timeit
-import matplotlib.pyplot as plt
+import csv
 
 OU = OU()       #Ornstein-Uhlenbeck Process
 
-def playGame(train_indicator=0):    #1 means Train, 0 means simply Run
+def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
     BUFFER_SIZE = 100000
     BATCH_SIZE = 32
     GAMMA = 0.99
@@ -34,8 +35,8 @@ def playGame(train_indicator=0):    #1 means Train, 0 means simply Run
 
     vision = False
 
-    EXPLORE = 10000.
-    episode_count = 2000
+    EXPLORE = 100000.
+    episode_count = 1000
     max_steps = 100000
     reward = 0
     done = False
@@ -56,26 +57,28 @@ def playGame(train_indicator=0):    #1 means Train, 0 means simply Run
 
     # Generate a Torcs environment
     env = TorcsEnv(vision=vision, throttle=True,gear_change=False)
-    folder = "../pre_"
+
     #Now load the weight
     print("Now we load the weight")
     try:
-        actor.model.load_weights(folder+"actormodel.h5")
-        critic.model.load_weights(folder+"criticmodel.h5")
-        actor.target_model.load_weights(folder+"actormodel.h5")
-        critic.target_model.load_weights(folder+"criticmodel.h5")
+        actor.model.load_weights("actormodel.h5")
+        critic.model.load_weights("criticmodel.h5")
+        actor.target_model.load_weights("actormodel.h5")
+        critic.target_model.load_weights("criticmodel.h5")
         print("Weight load successfully")
     except:
         print("Cannot find the weight")
+
+    print("TORCS Experiment Start.")
     x = np.zeros(episode_count)
     y_step = np.zeros(episode_count)
     y_reward = np.zeros(episode_count)
-    print("TORCS Experiment Start.")
     for i in range(episode_count):
         steps = 0
         rds = 0
         x[i] = i
         print("Episode : " + str(i) + " Replay Buffer " + str(buff.count()))
+
 
         if np.mod(i, 3) == 0:
             ob = env.reset(relaunch=True)   #relaunch TORCS every 3 episode because of the memory leak error
@@ -92,21 +95,18 @@ def playGame(train_indicator=0):    #1 means Train, 0 means simply Run
             noise_t = np.zeros([1,action_dim])
             
             a_t_original = actor.model.predict(s_t.reshape(1, s_t.shape[0]))
-            noise_t[0][0] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][0],  0.6, 0, 0.10)
-            noise_t[0][1] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][1],  1, 0.6, 0.10)
-            # noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2], 1.0, -0.1, 0.05)
+            noise_t[0][0] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][0],  0.0 , 0.60, 0.30)
+            noise_t[0][1] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][1],  0.5 , 1.00, 0.10)
+            noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2], -0.1 , 1.00, 0.05)
 
-            #The following code do the stochastic brake
-            if False:
-                if random.random() <= 0.1:
-                    print("********Now we apply the brake***********")
-                    noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2],  0.2 , 1.00, 0.10)
+            # The following code do the stochastic brake
+            if random.random() <= 0.1:
+                print("********Now we apply the brake***********")
+                noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2],  0.2 , 1.00, 0.10)
 
             a_t[0][0] = a_t_original[0][0] + noise_t[0][0]
             a_t[0][1] = a_t_original[0][1] + noise_t[0][1]
             a_t[0][2] = a_t_original[0][2] + noise_t[0][2]
-
-            print("a_t: ", a_t[0])
 
             ob, r_t, done, info = env.step(a_t[0])
 
@@ -141,16 +141,19 @@ def playGame(train_indicator=0):    #1 means Train, 0 means simply Run
 
             total_reward += r_t
             s_t = s_t1
-            
+
             print("Episode", i, "Step", step, "Action", a_t, "Reward", r_t, "Loss", loss)
-        
+            steps +=1
             step += 1
-            steps += 1
             rds += r_t
+
+
             if done:
                 break
+
         y_step[i] = steps
         y_reward[i] = rds
+
         if np.mod(i, 3) == 0:
             if (train_indicator):
                 print("Now we save model")
@@ -165,7 +168,7 @@ def playGame(train_indicator=0):    #1 means Train, 0 means simply Run
         print("TOTAL REWARD @ " + str(i) +"-th Episode  : Reward " + str(total_reward))
         print("Total Step: " + str(step))
         print("")
-       
+	
     plt.figure(1)
     plt.figure(num=1, figsize=(8,6))
     plt.title('Plot 1', size=14)
