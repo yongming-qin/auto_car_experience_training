@@ -181,7 +181,7 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
     plt.plot(x, y_reward, color='b', linestyle='--', marker='o')
     plt.savefig('plot2.png', format='png')
     z2 = np.polyfit(x, y_reward, 1)
-    print(z1)
+    print(z2)
 
     env.end()  # This is for shutting down TORCS
     print("Finish.")
