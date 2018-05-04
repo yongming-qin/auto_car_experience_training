@@ -15,6 +15,7 @@ from ActorNetwork import ActorNetwork
 from CriticNetwork import CriticNetwork
 from OU import OU
 import timeit
+import matplotlib.pyplot as plt
 
 OU = OU()       #Ornstein-Uhlenbeck Process
 
