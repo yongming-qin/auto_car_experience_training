@@ -18,6 +18,7 @@ import timeit
 
 import signal
 import sys
+import matplotlib.pyplot as plt
 
 OU = OU()       #Ornstein-Uhlenbeck Process
 
@@ -38,6 +39,7 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
 
     EXPLORE = 100000.
     episode_count = 2000
+    
     max_steps = 100000
     reward = 0
     done = False
@@ -70,9 +72,14 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
     except:
         print("Cannot find the weight")
 
+    x = np.zeros(episode_count)
+    y_step = np.zeros(episode_count)
+    y_reward = np.zeros(episode_count)
     print("TORCS Experiment Start.")
     for i in range(episode_count):
-
+        steps = 0
+        rds = 0
+        x[i] = i
         print("Episode : " + str(i) + " Replay Buffer " + str(buff.count()))
 
         if np.mod(i, 3) == 0:
@@ -144,9 +151,12 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
             print("Episode", i, "Step", step, "Action", a_t, "Reward", r_t, "Loss", loss)
         
             step += 1
+            steps += 1
+            rds += r_t
             if done:
                 break
-
+        y_step[i] = steps
+        y_reward[i] = rds
         if np.mod(i, 3) == 0:
             if (train_indicator):
                 print("Now we save model")
@@ -161,9 +171,29 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
         print("TOTAL REWARD @ " + str(i) +"-th Episode  : Reward " + str(total_reward))
         print("Total Step: " + str(step))
         print("")
-
+    
+    plt.figure(1)
+    plt.figure(num=1, figsize=(8,6))
+    plt.title('Plot 1', size=14)
+    plt.xlabel('ep', size=14)
+    plt.ylabel('steps', size=14)
+    plt.plot(x, y_step, color='b', linestyle='--', marker='o')
+    plt.savefig('plot1.png', format='png')
+    z1 = np.polyfit(x, y_step, 1)
+    print(z1)
+    #######
+    plt.figure(2)
+    plt.figure(num=2, figsize=(8,6))
+    plt.title('Plot 2', size=14)
+    plt.xlabel('ep', size=14)
+    plt.ylabel('rewards', size=14)
+    plt.plot(x, y_reward, color='b', linestyle='--', marker='o')
+    plt.savefig('plot2.png', format='png')
+    z2 = np.polyfit(x, y_reward, 1)
+print(z2)
     env.end()  # This is for shutting down TORCS
     print("Finish.")
+    
 
 def signal_handler(signal, frame):
     print('You pressed Ctrl+C!')
